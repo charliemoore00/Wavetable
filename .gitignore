@@ -3,6 +3,7 @@
 /JuceLibraryCode
 /Builds
 .DS_Store
+Wavetable.xcodeproj/
 
 # Prerequisites
 *.d
