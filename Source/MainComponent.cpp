@@ -28,6 +28,12 @@ MainComponent::MainComponent()
     ampLabel.setText("Amplitude", juce::dontSendNotification);
     ampLabel.attachToComponent(&ampSlider, true);
     
+    //______________________
+    frequency = freqSlider.getValue();
+    phase = 0;
+    wtSize = 1024;
+    amplitude = ampSlider.getValue();
+    
 
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
@@ -53,11 +59,6 @@ MainComponent::~MainComponent()
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
     
-    //NOT the best place to instantiate variables. move to constructor.
-    frequency = freqSlider.getValue();
-    phase = 0;
-    wtSize = 1024;
-    amplitude = ampSlider.getValue();
     currentSampleRate = sampleRate;
     
     //one cycle of a sin wave
