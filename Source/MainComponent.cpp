@@ -6,6 +6,28 @@ MainComponent::MainComponent()
     // Make sure you set the size of the component after
     // you add any child components.
     setSize (800, 600);
+    
+    //_______________________
+    freqSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    freqSlider.setTextValueSuffix("Hz");
+    freqSlider.setRange(110, 1500, 1);
+    freqSlider.setValue(440);
+    freqSlider.addListener(this);
+    addAndMakeVisible(freqSlider);
+
+    freqLabel.setText("Frequency", juce::dontSendNotification);
+    freqLabel.attachToComponent(&freqSlider, true);
+    
+    //______________________
+    ampSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    ampSlider.setRange(0.0, 1.0, 0.01);
+    ampSlider.addListener(this);
+    ampSlider.setValue(0.2);
+    addAndMakeVisible(ampSlider);
+    
+    ampLabel.setText("Amplitude", juce::dontSendNotification);
+    ampLabel.attachToComponent(&ampSlider, true);
+    
 
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
@@ -30,24 +52,38 @@ MainComponent::~MainComponent()
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
-    // This function will be called when the audio device is started, or when
-    // its settings (i.e. sample rate, block size, etc) are changed.
-
-    // You can use this function to initialise any resources you might need,
-    // but be careful - it will be called on the audio thread, not the GUI thread.
-
-    // For more details, see the help for AudioProcessor::prepareToPlay()
+    
+    //NOT the best place to instantiate variables. move to constructor.
+    frequency = freqSlider.getValue();
+    phase = 0;
+    wtSize = 1024;
+    amplitude = ampSlider.getValue();
+    currentSampleRate = sampleRate;
+    
+    //one cycle of a sin wave
+    for(int i = 0; i < wtSize; i++)
+    {
+        waveTable.insert(i, sin(2.0 * juce::MathConstants<double>::pi * i / wtSize));
+    }
+    
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    // Your audio-processing code goes here!
-
-    // For more details, see the help for AudioProcessor::getNextAudioBlock()
-
-    // Right now we are not producing any data, in which case we need to clear the buffer
-    // (to prevent the output of random noise)
-    bufferToFill.clearActiveBufferRegion();
+    //bufferToFill.clearActiveBufferRegion();
+    
+    //setting up buffers for stereo channels 
+    float* const leftSpeaker = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
+    //float* const rightSpeaker = bufferToFill.buffer->getWritePointer(1, bufferToFill.startSample);
+    
+    
+    for(int sample = 0; sample < bufferToFill.numSamples; sample++)
+    {
+        leftSpeaker[sample] = waveTable[(int)phase] * amplitude;
+        //rightSpeaker[sample] = waveTable[(int)phase] * amplitude;
+        updateFrequency();
+    }
+        
 }
 
 void MainComponent::releaseResources()
@@ -72,4 +108,26 @@ void MainComponent::resized()
     // This is called when the MainContentComponent is resized.
     // If you add any child components, this is where you should
     // update their positions.
+    
+    const int labelSpace = 100;
+    freqSlider.setBounds(labelSpace, 20, getWidth()-100, 20);
+    ampSlider.setBounds(labelSpace, 50, getWidth()-100, 50);
+}
+
+void MainComponent::sliderValueChanged(juce::Slider* slider)
+{
+    if (slider == &freqSlider)
+    {
+        frequency = freqSlider.getValue();
+        std::cout << frequency;
+    } else if (slider == &ampSlider)
+    {
+        amplitude = ampSlider.getValue();
+    }
+}
+
+void MainComponent::updateFrequency()
+{
+    increment = frequency * wtSize / currentSampleRate;
+    phase = fmod(phase + increment, wtSize);
 }
