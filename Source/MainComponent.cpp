@@ -119,7 +119,6 @@ void MainComponent::sliderValueChanged(juce::Slider* slider)
     if (slider == &freqSlider)
     {
         frequency = freqSlider.getValue();
-        std::cout << frequency;
     } else if (slider == &ampSlider)
     {
         amplitude = ampSlider.getValue();
