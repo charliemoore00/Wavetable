@@ -34,6 +34,13 @@ MainComponent::MainComponent()
     wtSize = 1024;
     amplitude = ampSlider.getValue();
     
+    
+    //one cycle of a sin wave
+    for(int i = 0; i < wtSize; i++)
+    {
+        waveTable.insert(i, sin(2.0 * juce::MathConstants<double>::pi * i / wtSize));
+    }
+    
 
     // Some platforms require permissions to open input channels so request that here
     if (juce::RuntimePermissions::isRequired (juce::RuntimePermissions::recordAudio)
@@ -61,27 +68,20 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     
     currentSampleRate = sampleRate;
     
-    //one cycle of a sin wave
-    for(int i = 0; i < wtSize; i++)
-    {
-        waveTable.insert(i, sin(2.0 * juce::MathConstants<double>::pi * i / wtSize));
-    }
-    
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
-    //bufferToFill.clearActiveBufferRegion();
+    bufferToFill.clearActiveBufferRegion();
     
     //setting up buffers for stereo channels 
     float* const leftSpeaker = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
-    //float* const rightSpeaker = bufferToFill.buffer->getWritePointer(1, bufferToFill.startSample);
-    
+    float* const rightSpeaker = bufferToFill.buffer->getWritePointer(1, bufferToFill.startSample);
     
     for(int sample = 0; sample < bufferToFill.numSamples; sample++)
     {
         leftSpeaker[sample] = waveTable[(int)phase] * amplitude;
-        //rightSpeaker[sample] = waveTable[(int)phase] * amplitude;
+        rightSpeaker[sample] = waveTable[(int)phase] * amplitude;
         updateFrequency();
     }
         
@@ -120,6 +120,7 @@ void MainComponent::sliderValueChanged(juce::Slider* slider)
     if (slider == &freqSlider)
     {
         frequency = freqSlider.getValue();
+        std::cout << increment << std::endl;
     } else if (slider == &ampSlider)
     {
         amplitude = ampSlider.getValue();
@@ -130,4 +131,6 @@ void MainComponent::updateFrequency()
 {
     increment = frequency * wtSize / currentSampleRate;
     phase = fmod(phase + increment, wtSize);
+    
+    
 }
